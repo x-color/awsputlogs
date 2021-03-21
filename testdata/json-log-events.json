@@ -1,0 +1,10 @@
+[
+    {
+        "level": "info",
+        "message": "Start Server"
+    },
+    {
+        "level": "error",
+        "message": "Failed to Start Server"
+    }
+]
