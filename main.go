@@ -125,10 +125,23 @@ func getLatestLogStream(client *cloudwatchlogs.Client, logGroup string) (string,
 }
 
 func putLogEvents(client *cloudwatchlogs.Client, logGroup, logStream string, logEvents []string) error {
+	in := &cloudwatchlogs.DescribeLogStreamsInput{
+		LogGroupName:        aws.String(logGroup),
+		LogStreamNamePrefix: aws.String(logStream),
+	}
+	out, err := client.DescribeLogStreams(context.Background(), in)
+	if err != nil {
+		return err
+	}
+	if len(out.LogStreams) == 0 {
+		return fmt.Errorf("not log stream error: %s is not found in %s", logStream, logGroup)
+	}
+
 	param := &cloudwatchlogs.PutLogEventsInput{
 		LogEvents:     make([]types.InputLogEvent, len(logEvents)),
 		LogGroupName:  aws.String(logGroup),
 		LogStreamName: aws.String(logStream),
+		SequenceToken: out.LogStreams[0].UploadSequenceToken,
 	}
 
 	for i, event := range logEvents {
@@ -138,7 +151,7 @@ func putLogEvents(client *cloudwatchlogs.Client, logGroup, logStream string, log
 		}
 	}
 
-	_, err := client.PutLogEvents(context.Background(), param)
+	_, err = client.PutLogEvents(context.Background(), param)
 	return err
 }
 
